@@ -1,0 +1,100 @@
+# App de escritorio (Tauri) para el release: .dmg/.app (macOS arm64 e Intel),
+# .msi/.exe (Windows) y .deb/.AppImage (Linux). Se adjuntan al release del tag.
+#
+# Disparo: al empujar un tag `v*`, o manualmente (workflow_dispatch) indicando el tag
+# para rellenar un release existente (p. ej. v0.1.0).
+#
+# Nota: los bundles NO van firmados (sin certificado de pago). En macOS: clic derecho →
+# Abrir (una vez). En Windows: "Más información → Ejecutar de todas formas".
+name: Release Desktop
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag del release a rellenar (p. ej. v0.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  desktop:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            label: macos-arm64
+            rust_target: aarch64-apple-darwin
+            args: "--target aarch64-apple-darwin"
+          - os: macos-latest
+            label: macos-x86_64
+            rust_target: x86_64-apple-darwin
+            args: "--target x86_64-apple-darwin"
+          - os: ubuntu-22.04
+            label: linux-x86_64
+            rust_target: ""
+            args: ""
+          - os: windows-latest
+            label: windows-x86_64
+            rust_target: ""
+            args: ""
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Toolchain de Rust 1.95
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.95.0"
+          targets: ${{ matrix.rust_target }}
+
+      - name: Dependencias de Linux (Tauri 2 / WebKitGTK)
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - name: pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: ui/pnpm-lock.yaml
+
+      - name: Instalar dependencias del frontend
+        working-directory: ui
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache de Rust (src-tauri)
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "ui/src-tauri -> target"
+          key: ${{ matrix.label }}
+
+      - name: Build + publicar bundle en el release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: ui
+          tagName: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          releaseName: perfkit ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          releaseDraft: false
+          args: ${{ matrix.args }}
