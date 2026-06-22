@@ -1,0 +1,169 @@
+{{- /*
+CRD LoadTest gestionada por el chart (gate: .Values.crd.install).
+
+Nota: Helm también soporta el directorio especial crds/ (instala antes que las
+plantillas, pero no las actualiza ni borra). Aquí se opta por una plantilla
+condicionada por values para poder activarla/desactivarla; la anotación
+helm.sh/resource-policy: keep evita que un `helm uninstall` borre el CRD y se
+lleve por delante objetos LoadTest existentes.
+*/ -}}
+{{- if .Values.crd.install }}
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: loadtests.perfkit.dev
+  labels:
+    {{- include "perfkit.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  group: perfkit.dev
+  scope: Namespaced
+  names:
+    kind: LoadTest
+    listKind: LoadTestList
+    plural: loadtests
+    singular: loadtest
+    shortNames:
+      - lt
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Phase
+          type: string
+          jsonPath: .status.phase
+        - name: VUs
+          type: integer
+          jsonPath: .spec.vus
+        - name: Workers
+          type: integer
+          jsonPath: .spec.workers
+        - name: Throughput
+          type: string
+          jsonPath: .status.throughput
+        - name: ErrorRate
+          type: string
+          jsonPath: .status.errorRate
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+      schema:
+        openAPIV3Schema:
+          type: object
+          required:
+            - spec
+          properties:
+            spec:
+              type: object
+              required:
+                - scenario
+                - vus
+              properties:
+                scenario:
+                  type: object
+                  description: Plan a ejecutar (IR canónico), inline o por ConfigMap.
+                  properties:
+                    inline:
+                      type: string
+                      description: Escenario en YAML embebido.
+                    configMapRef:
+                      type: object
+                      required:
+                        - name
+                      properties:
+                        name:
+                          type: string
+                        key:
+                          type: string
+                          default: scenario.yaml
+                  oneOf:
+                    - required: ["inline"]
+                    - required: ["configMapRef"]
+                vus:
+                  type: integer
+                  format: int32
+                  minimum: 1
+                  description: VUs totales a repartir entre workers.
+                durationSecs:
+                  type: integer
+                  format: int64
+                  minimum: 1
+                  default: 60
+                workers:
+                  type: integer
+                  format: int32
+                  minimum: 1
+                  maximum: 1000
+                  default: 3
+                thresholds:
+                  type: object
+                  properties:
+                    maxErrorRate:
+                      type: number
+                      minimum: 0
+                      maximum: 1
+                    maxP95Ms:
+                      type: integer
+                      format: int64
+                      minimum: 0
+                    maxP99Ms:
+                      type: integer
+                      format: int64
+                      minimum: 0
+                    minThroughputPerSec:
+                      type: number
+                      minimum: 0
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                  enum:
+                    - Pending
+                    - Provisioning
+                    - Running
+                    - Succeeded
+                    - Failed
+                throughput:
+                  type: string
+                errorRate:
+                  type: string
+                readyWorkers:
+                  type: integer
+                  format: int32
+                startTime:
+                  type: string
+                  format: date-time
+                completionTime:
+                  type: string
+                  format: date-time
+                message:
+                  type: string
+                observedGeneration:
+                  type: integer
+                  format: int64
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - type
+                      - status
+                    properties:
+                      type:
+                        type: string
+                      status:
+                        type: string
+                        enum: ["True", "False", "Unknown"]
+                      reason:
+                        type: string
+                      message:
+                        type: string
+                      lastTransitionTime:
+                        type: string
+                        format: date-time
+{{- end }}

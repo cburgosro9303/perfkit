@@ -1,0 +1,10 @@
+# Issues en blanco deshabilitados: que todo entre por una plantilla → clasificable y priorizable.
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Guía — Migrar tu primer JMX
+    # Reemplaza cburgosro9303/perfkit por tu repositorio real.
+    url: https://github.com/cburgosro9303/perfkit/blob/main/docs/migration/migrar-tu-primer-jmx.md
+    about: Cómo importar un JMX, ejecutar y leer el reporte antes de abrir un issue.
+  - name: 💬 Discusiones de la comunidad
+    url: https://github.com/cburgosro9303/perfkit/discussions
+    about: Preguntas abiertas, ideas y dudas de uso (mejor que un issue para conversar).

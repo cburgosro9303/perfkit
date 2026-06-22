@@ -1,0 +1,10 @@
+# Namespace dedicado para todos los componentes de perfkit en modo distribuido.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: perfkit
+  labels:
+    app.kubernetes.io/name: perfkit
+    app.kubernetes.io/part-of: perfkit
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/warn: restricted

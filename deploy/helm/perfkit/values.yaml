@@ -1,0 +1,139 @@
+# Valores por defecto del chart perfkit (modo distribuido).
+# Sobreescribe con: helm install perfkit ./deploy/helm/perfkit -f mis-valores.yaml
+
+# Prefijo de nombres. Por defecto deriva del release; fija para anclarlo.
+nameOverride: ""
+fullnameOverride: ""
+
+# Etiquetas comunes añadidas a todos los recursos.
+commonLabels: {}
+
+# ---------------------------------------------------------------------------
+# Coordinator — plano de control (1 réplica, Service ClusterIP :7700).
+# ---------------------------------------------------------------------------
+coordinator:
+  replicas: 1
+  image:
+    repository: perfkit/coordinator
+    tag: "0.1"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 7700
+  # Carga total a repartir entre workers (no por worker) y duración.
+  vus: 300
+  durationSecs: 60
+  # Espera a que todos los workers estén READY antes de arrancar.
+  barrierStart: true
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+    limits:
+      cpu: "1"
+      memory: "512Mi"
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  # Argumentos extra al binario coordinator (se añaden a los por defecto).
+  extraArgs: []
+  # Variables de entorno extra.
+  extraEnv: []
+
+# ---------------------------------------------------------------------------
+# Worker — plano de datos (N réplicas, Service headless :7711).
+# ---------------------------------------------------------------------------
+worker:
+  replicas: 3
+  image:
+    repository: perfkit/worker
+    tag: "0.1"
+    pullPolicy: IfNotPresent
+  service:
+    # Headless para descubrimiento 1:1 por DNS desde el coordinator.
+    port: 7711
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "256Mi"
+    limits:
+      cpu: "2"
+      memory: "1Gi"
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  extraArgs: []
+  extraEnv: []
+
+# ---------------------------------------------------------------------------
+# Plan de prueba (IR canónico de perfkit). Se monta como ConfigMap si se define.
+# ---------------------------------------------------------------------------
+scenario:
+  # Si está activo, crea un ConfigMap con el plan y lo monta en el coordinator.
+  create: true
+  # Contenido inline del escenario (YAML del IR canónico).
+  inline: |
+    name: demo-distribuida
+    version: 1
+    groups:
+      - name: humo-http
+        load:
+          virtual_users: 300
+          ramp_up_secs: 10
+          hold_secs: 40
+          ramp_down_secs: 10
+          duration_secs: 60
+        steps:
+          - http:
+              name: GET raíz del target
+              method: GET
+              url: http://target.perfkit.svc.cluster.local:8080/
+              assertions:
+                - status_below: 400
+  # Umbrales del quality gate (mismas claves que examples/yaml/thresholds.yaml).
+  thresholds:
+    maxErrorRate: 0.05
+    maxP95Ms: 1500
+    maxP99Ms: 3000
+    minThroughputPerSec: 1
+
+# ---------------------------------------------------------------------------
+# Target de juguete (SUT) para demos autocontenidas. Desactívalo en producción.
+# ---------------------------------------------------------------------------
+target:
+  enabled: true
+  image:
+    repository: python
+    tag: "3-slim"
+    pullPolicy: IfNotPresent
+  port: 8080
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "64Mi"
+    limits:
+      cpu: "500m"
+      memory: "128Mi"
+
+# ---------------------------------------------------------------------------
+# CRD LoadTest. Instala el CustomResourceDefinition junto con el chart.
+# (Para producción, prefiere instalar el CRD por separado / con el operator.)
+# ---------------------------------------------------------------------------
+crd:
+  install: true
+
+# Contexto de seguridad común (Pod Security "restricted").
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  fsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+imagePullSecrets: []

@@ -1,0 +1,82 @@
+# RBAC del operator de perfkit.
+#
+# El operator observa recursos LoadTest (perfkit.dev) y reconcilia su estado
+# creando/borrando Jobs (coordinator) y Pods (workers), leyendo ConfigMaps con el
+# plan y publicando eventos. Permisos mínimos para esa función.
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: perfkit-operator
+  namespace: perfkit
+  labels:
+    app.kubernetes.io/name: perfkit
+    app.kubernetes.io/component: operator
+    app.kubernetes.io/part-of: perfkit
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: perfkit-operator
+  labels:
+    app.kubernetes.io/name: perfkit
+    app.kubernetes.io/component: operator
+    app.kubernetes.io/part-of: perfkit
+rules:
+  # CRs LoadTest: observar y reconciliar.
+  - apiGroups: ["perfkit.dev"]
+    resources: ["loadtests"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+  # Subrecurso status: el operator escribe el resultado consolidado.
+  - apiGroups: ["perfkit.dev"]
+    resources: ["loadtests/status"]
+    verbs: ["get", "update", "patch"]
+  - apiGroups: ["perfkit.dev"]
+    resources: ["loadtests/finalizers"]
+    verbs: ["update"]
+  # Workloads gestionados por el operator: coordinator (Job) y workers (Pods).
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+  # Service headless para el descubrimiento worker<->coordinator.
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Plan de prueba y umbrales por referencia.
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch"]
+  # Eventos para trazabilidad (kubectl describe loadtest ...).
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+  # Lease para elección de líder si el operator corre con varias réplicas.
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: perfkit-operator
+  labels:
+    app.kubernetes.io/name: perfkit
+    app.kubernetes.io/component: operator
+    app.kubernetes.io/part-of: perfkit
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: perfkit-operator
+subjects:
+  - kind: ServiceAccount
+    name: perfkit-operator
+    namespace: perfkit

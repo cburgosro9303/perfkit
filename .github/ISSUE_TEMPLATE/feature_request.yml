@@ -1,0 +1,61 @@
+name: ✨ Propuesta de mejora
+description: Sugiere una funcionalidad o mejora
+title: "[mejora]: "
+labels: ["tipo: mejora", "estado: triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Cuéntanos el **problema** que quieres resolver, no solo la solución — así encontramos la mejor forma.
+  - type: textarea
+    id: problema
+    attributes:
+      label: ¿Qué problema resuelve?
+      description: La necesidad o fricción real. Por ejemplo, al migrar planes con JSR223 no sabes cómo portarlos.
+    validations:
+      required: true
+  - type: textarea
+    id: propuesta
+    attributes:
+      label: Propuesta
+      description: Qué te gustaría que hiciera perfkit.
+    validations:
+      required: true
+  - type: textarea
+    id: alternativas
+    attributes:
+      label: Alternativas consideradas
+      description: Otras formas de resolverlo, o cómo lo haces hoy (p.ej. en JMeter).
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área
+      options:
+        - Importador JMX / migración
+        - Motor de ejecución (engine)
+        - Reportes / analítica
+        - UI nativa
+        - CLI / CI
+        - Distribuido
+        - Histórico / colaboración
+        - Kafka / plugins / IA
+        - Otro
+    validations:
+      required: true
+  - type: dropdown
+    id: importancia
+    attributes:
+      label: Importancia para ti
+      options:
+        - "Imprescindible — no puedo adoptar perfkit sin esto"
+        - "Importante — mejoraría mucho mi flujo"
+        - "Bonito de tener"
+    validations:
+      required: true
+  - type: checkboxes
+    id: previo
+    attributes:
+      label: Antes de enviar
+      options:
+        - label: Busqué propuestas similares y no encontré una abierta.
+          required: true

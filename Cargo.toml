@@ -1,0 +1,83 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/scenario-ir",
+    "crates/jmx-importer",
+    "crates/http-adapter",
+    "crates/engine",
+    "crates/metrics",
+    "crates/reports",
+    "crates/security",
+    "crates/cluster",
+    "crates/history",
+    "crates/ai-assist",
+    "crates/plugin-host",
+    "crates/kafka-adapter",
+    "crates/cli",
+]
+# La app Tauri es un proyecto Cargo aparte (depende de los crates por path) para
+# que `cargo build --workspace` del core no requiera las deps de sistema de Tauri.
+exclude = ["ui/src-tauri"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+license = "Apache-2.0"
+authors = ["perfkit contributors"]
+description = "perfkit — suite moderna de performance testing, reemplazo de Apache JMeter"
+
+[workspace.dependencies]
+# Crates internos
+scenario-ir = { path = "crates/scenario-ir" }
+jmx-importer = { path = "crates/jmx-importer" }
+http-adapter = { path = "crates/http-adapter" }
+engine = { path = "crates/engine" }
+metrics = { path = "crates/metrics" }
+reports = { path = "crates/reports" }
+security = { path = "crates/security" }
+cluster = { path = "crates/cluster" }
+history = { path = "crates/history" }
+ai-assist = { path = "crates/ai-assist" }
+plugin-host = { path = "crates/plugin-host" }
+kafka-adapter = { path = "crates/kafka-adapter" }
+
+# Externos
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml_ng = "0.10"
+rmp-serde = "1"
+schemars = { version = "1.2", features = ["chrono04"] }
+thiserror = "2"
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.13", default-features = false, features = ["cookies", "gzip", "rustls", "http2", "stream", "json"] }
+roxmltree = "0.21"
+hdrhistogram = "7"
+regex = "1"
+serde_json_path = "0.7"
+csv = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+rand = "0.10"
+rand_distr = "0.6"
+html-escape = "0.2"
+# Fases 6–10
+axum = "0.8"
+tower = "0.5"
+rusqlite = { version = "0.32", features = ["bundled"] }
+wasmi = "0.40"
+wat = "1"
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+sha2 = "0.10"
+hex = "0.4"
+base64 = "0.22"
+rskafka = "0.5"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1

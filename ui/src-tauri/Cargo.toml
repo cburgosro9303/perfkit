@@ -1,0 +1,28 @@
+[package]
+name = "perfkit-studio"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.95"
+description = "perfkit Studio — app nativa de QA (Tauri)"
+
+[lib]
+name = "perfkit_studio_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+
+# Crates del core perfkit (workspace excluye este proyecto; deps por path).
+scenario-ir = { path = "../../crates/scenario-ir" }
+jmx-importer = { path = "../../crates/jmx-importer" }
+engine = { path = "../../crates/engine" }
+metrics = { path = "../../crates/metrics" }
+reports = { path = "../../crates/reports" }
+history = { path = "../../crates/history" }

@@ -1,0 +1,157 @@
+{
+  "$defs": {
+    "FidelitySummary": {
+      "description": "Resumen agregado de fidelidad.",
+      "properties": {
+        "assisted": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "fidelity_pct": {
+          "description": "Porcentaje migrado 1:1 sobre el total (0–100).",
+          "format": "double",
+          "type": "number"
+        },
+        "ignored": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "migrated": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "total": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "unsupported": {
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "total",
+        "migrated",
+        "assisted",
+        "unsupported",
+        "ignored",
+        "fidelity_pct"
+      ],
+      "type": "object"
+    },
+    "MappedElement": {
+      "description": "Un elemento JMeter y cómo se mapeó al IR.",
+      "properties": {
+        "ir_ref": {
+          "description": "Referencia a dónde quedó en el IR, si aplica.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "jmx_name": {
+          "description": "Nombre legible (testname) del elemento.",
+          "type": "string"
+        },
+        "jmx_type": {
+          "description": "Tipo JMeter (p.ej. \"HTTPSamplerProxy\", \"ThreadGroup\").",
+          "type": "string"
+        },
+        "path": {
+          "description": "Ruta en el árbol (p.ej. \"Test Plan > Thread Group > Login\").",
+          "type": "string"
+        },
+        "reason": {
+          "description": "Razón (obligatoria para unsupported/ignored/assisted).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "$ref": "#/$defs/MappingStatus",
+          "description": "Estado de migración."
+        },
+        "suggestion": {
+          "description": "Sugerencia de acción para el QA.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "jmx_type",
+        "jmx_name",
+        "path",
+        "status"
+      ],
+      "type": "object"
+    },
+    "MappingStatus": {
+      "description": "Estado de migración de un elemento JMeter.",
+      "oneOf": [
+        {
+          "const": "migrated",
+          "description": "Migrado 1:1 a IR nativo (Nivel 1).",
+          "type": "string"
+        },
+        {
+          "const": "assisted",
+          "description": "Migración asistida: requiere revisión/acción manual (Nivel 2).",
+          "type": "string"
+        },
+        {
+          "const": "unsupported",
+          "description": "No soportado: reportado explícitamente, no ejecutado (Nivel 4).",
+          "type": "string"
+        },
+        {
+          "const": "ignored",
+          "description": "Ignorado a propósito con razón (p.ej. listeners como metadata).",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Reporte completo de fidelidad de una migración.",
+  "properties": {
+    "elements": {
+      "items": {
+        "$ref": "#/$defs/MappedElement"
+      },
+      "type": "array"
+    },
+    "generated_by": {
+      "description": "Generador (p.ej. \"perfkit-jmx-importer 0.1.0\").",
+      "type": "string"
+    },
+    "notes": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "source": {
+      "description": "Archivo .jmx de origen.",
+      "type": "string"
+    },
+    "summary": {
+      "$ref": "#/$defs/FidelitySummary"
+    }
+  },
+  "required": [
+    "source",
+    "generated_by",
+    "summary",
+    "elements"
+  ],
+  "title": "MigrationReport",
+  "type": "object"
+}

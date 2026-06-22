@@ -1,0 +1,6 @@
+# Umbrales para el quality gate de CI (perfkit gate ... --thresholds este.yaml).
+# Un run que los supere hace fallar el pipeline (exit code 1).
+max_error_rate: 0.05          # 5% de errores como máximo
+max_p95_ms: 1500              # p95 <= 1500 ms
+max_p99_ms: 3000              # p99 <= 3000 ms
+min_throughput_per_sec: 1     # al menos 1 req/s

@@ -1,0 +1,24 @@
+# Artefactos de compilación de Rust (se reconstruyen dentro de la imagen).
+target/
+**/target/
+
+# UI (Tauri/Vite): no forma parte de la imagen del core.
+ui/node_modules/
+ui/dist/
+ui/.vite/
+
+# Control de versiones e historial.
+.git/
+.gitignore
+
+# Reportes generados por ejecuciones locales.
+reports/
+
+# Scratch de Playwright MCP.
+.playwright-mcp/
+
+# Ruido del SO / editores.
+.DS_Store
+*.swp
+.idea/
+.vscode/

@@ -1,0 +1,28 @@
+[package]
+name = "cluster"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "perfkit: ejecución distribuida (coordinator/worker, control plane HTTP/JSON)"
+
+[lib]
+name = "cluster"
+path = "src/lib.rs"
+
+[dependencies]
+scenario-ir.workspace = true
+metrics.workspace = true
+engine.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+axum.workspace = true
+reqwest.workspace = true
+tracing.workspace = true
+anyhow.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true
+scenario-ir.workspace = true

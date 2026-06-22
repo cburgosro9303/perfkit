@@ -1,0 +1,21 @@
+[package]
+name = "kafka-adapter"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "perfkit: adaptador Kafka (producer sampler) — Fase 7"
+
+[lib]
+name = "kafka_adapter"
+path = "src/lib.rs"
+
+[dependencies]
+scenario-ir.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+regex.workspace = true
+tracing.workspace = true
+rskafka.workspace = true
+chrono.workspace = true

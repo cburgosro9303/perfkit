@@ -1,0 +1,125 @@
+# perfkit — modo distribuido (Fase 6) para demo local autocontenida.
+#
+# Topología:
+#   - coordinator : plano de control. API HTTP/JSON en :7700. Reparte VUs entre
+#                   los workers, hace barrier-start, agrega métricas y emite el
+#                   reporte consolidado.
+#   - worker      : plano de datos. API HTTP en :7711. Cada réplica ejecuta su
+#                   cuota de usuarios virtuales y transmite métricas al coordinator.
+#   - target      : SUT (system under test) de juguete (echo HTTP) para que la
+#                   demo no dependa de servicios externos.
+#
+# Uso:
+#   docker compose -f deploy/docker-compose.distributed.yml up --scale worker=3
+#   # El coordinator descubre a los workers vía DNS del servicio "worker".
+#   # Reporte consolidado: http://localhost:7700/report
+#
+# NOTA: las imágenes perfkit/coordinator:0.1 y perfkit/worker:0.1 son conceptuales
+#       (Fase 6, diseño). Aún no existe el binario coordinator/worker; este compose
+#       documenta el contrato de despliegue objetivo.
+
+name: perfkit-distributed
+
+services:
+  coordinator:
+    image: perfkit/coordinator:0.1
+    # Si aún no publicas la imagen, descomenta para construir desde un Dockerfile local:
+    # build:
+    #   context: ..
+    #   dockerfile: deploy/docker/Dockerfile.coordinator
+    container_name: perfkit-coordinator
+    command:
+      - "coordinator"
+      - "serve"
+      - "--listen=0.0.0.0:7700"
+      # Descubrimiento de workers por DNS del servicio (round-robin de Docker DNS).
+      - "--worker-discovery=dns"
+      - "--worker-service=worker"
+      - "--worker-port=7711"
+    environment:
+      # Plan a ejecutar (montado más abajo). El coordinator lo reparte entre workers.
+      PERFKIT_SCENARIO: /etc/perfkit/scenario.yaml
+      PERFKIT_THRESHOLDS: /etc/perfkit/thresholds.yaml
+      # Carga total a repartir entre los workers (no por worker).
+      PERFKIT_VUS: "300"
+      PERFKIT_DURATION_SECS: "60"
+      # Espera a que TODOS los workers estén READY antes de arrancar (barrier start).
+      PERFKIT_EXPECTED_WORKERS: "3"
+      PERFKIT_BARRIER_START: "true"
+      RUST_LOG: "info"
+    ports:
+      - "7700:7700"
+    volumes:
+      # Reutiliza los ejemplos del repo como plan + umbrales de la demo.
+      - ../examples/yaml/thresholds.yaml:/etc/perfkit/thresholds.yaml:ro
+      # Provee tu propio scenario.yaml (genera uno con: perfkit init -o scenario.yaml).
+      - ./examples/scenario.yaml:/etc/perfkit/scenario.yaml:ro
+    healthcheck:
+      # Endpoint de salud del plano de control.
+      test: ["CMD", "perfkit", "coordinator", "healthcheck", "--url=http://localhost:7700/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      target:
+        condition: service_healthy
+    networks:
+      - perfkit
+    restart: unless-stopped
+
+  worker:
+    image: perfkit/worker:0.1
+    # build:
+    #   context: ..
+    #   dockerfile: deploy/docker/Dockerfile.worker
+    command:
+      - "worker"
+      - "serve"
+      - "--listen=0.0.0.0:7711"
+      # Se registra contra el coordinator y espera la asignación de su cuota de VUs.
+      - "--coordinator-url=http://coordinator:7700"
+    environment:
+      # URL del plano de control para registro y streaming de métricas.
+      COORDINATOR_URL: "http://coordinator:7700"
+      PERFKIT_WORKER_LISTEN: "0.0.0.0:7711"
+      RUST_LOG: "info"
+    expose:
+      - "7711"
+    healthcheck:
+      test: ["CMD", "perfkit", "worker", "healthcheck", "--url=http://localhost:7711/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      coordinator:
+        condition: service_started
+    networks:
+      - perfkit
+    # Escala con: docker compose ... up --scale worker=3
+    deploy:
+      replicas: 3
+    restart: unless-stopped
+
+  target:
+    # SUT de juguete: servidor HTTP estático que responde 200 a todo.
+    image: python:3-slim
+    container_name: perfkit-target
+    working_dir: /srv
+    command: ["python", "-m", "http.server", "8080"]
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8080/').status==200 else 1)"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    networks:
+      - perfkit
+    restart: unless-stopped
+
+networks:
+  perfkit:
+    driver: bridge

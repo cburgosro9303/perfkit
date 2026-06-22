@@ -1,0 +1,5 @@
+[toolchain]
+# El plan pedía 1.96.0; el entorno tiene 1.95.0, que ya soporta edición 2024.
+# Se fija 1.95.0 para reproducibilidad (ver docs/adr/ADR-001).
+channel = "1.95.0"
+components = ["rustfmt", "clippy"]

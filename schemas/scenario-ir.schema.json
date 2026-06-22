@@ -1,0 +1,1070 @@
+{
+  "$defs": {
+    "Assertion": {
+      "description": "Aserciones sobre la respuesta.",
+      "oneOf": [
+        {
+          "description": "Response Assertion (código de estado).",
+          "properties": {
+            "assert": {
+              "const": "status_code",
+              "type": "string"
+            },
+            "codes": {
+              "items": {
+                "format": "uint16",
+                "maximum": 65535,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "assert",
+            "codes"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "Response Assertion (substring en el cuerpo).",
+          "properties": {
+            "assert": {
+              "const": "body_contains",
+              "type": "string"
+            },
+            "negate": {
+              "default": false,
+              "type": "boolean"
+            },
+            "substring": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "assert",
+            "substring"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "Response Assertion (regex en el cuerpo).",
+          "properties": {
+            "assert": {
+              "const": "body_matches",
+              "type": "string"
+            },
+            "negate": {
+              "default": false,
+              "type": "boolean"
+            },
+            "pattern": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "assert",
+            "pattern"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "JSON Assertion (JSONPath).",
+          "properties": {
+            "assert": {
+              "const": "json_path",
+              "type": "string"
+            },
+            "equals": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "exists": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "path": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "assert",
+            "path"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "Duration Assertion.",
+          "properties": {
+            "assert": {
+              "const": "duration_below_ms",
+              "type": "string"
+            },
+            "max_ms": {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "assert",
+            "max_ms"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "Size Assertion.",
+          "properties": {
+            "assert": {
+              "const": "size_below_bytes",
+              "type": "string"
+            },
+            "max_bytes": {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "assert",
+            "max_bytes"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "Body": {
+      "description": "Cuerpo de una petición HTTP.",
+      "oneOf": [
+        {
+          "description": "Cuerpo crudo (JSON, texto, XML, ...).",
+          "properties": {
+            "content_type": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "data": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "raw",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "data"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "Formulario application/x-www-form-urlencoded.",
+          "properties": {
+            "fields": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "kind": {
+              "const": "form",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "fields"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "Dataset": {
+      "description": "Dataset CSV (CSV Data Set Config).",
+      "properties": {
+        "delimiter": {
+          "default": ",",
+          "description": "Delimitador de columnas.",
+          "maxLength": 1,
+          "minLength": 1,
+          "type": "string"
+        },
+        "first_line_is_header": {
+          "default": false,
+          "description": "La primera línea es encabezado (se ignora como datos).",
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        },
+        "path": {
+          "description": "Ruta del archivo CSV (relativa al escenario o absoluta).",
+          "type": "string"
+        },
+        "recycle": {
+          "default": true,
+          "description": "Reciclar al llegar al EOF.",
+          "type": "boolean"
+        },
+        "variable_names": {
+          "description": "Nombres de variable por columna.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "path",
+        "variable_names"
+      ],
+      "type": "object"
+    },
+    "Extractor": {
+      "description": "Extractores de variables desde la respuesta.",
+      "oneOf": [
+        {
+          "description": "Regular Expression Extractor.",
+          "properties": {
+            "default": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "extract": {
+              "const": "regex",
+              "type": "string"
+            },
+            "group": {
+              "default": 1,
+              "format": "uint",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "pattern": {
+              "type": "string"
+            },
+            "var": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "extract",
+            "var",
+            "pattern"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "JSON Extractor (JSONPath).",
+          "properties": {
+            "default": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "extract": {
+              "const": "json_path",
+              "type": "string"
+            },
+            "path": {
+              "type": "string"
+            },
+            "var": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "extract",
+            "var",
+            "path"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "Boundary Extractor (texto entre `left` y `right`).",
+          "properties": {
+            "default": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "extract": {
+              "const": "boundary",
+              "type": "string"
+            },
+            "left": {
+              "type": "string"
+            },
+            "right": {
+              "type": "string"
+            },
+            "var": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "extract",
+            "var",
+            "left",
+            "right"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "HttpDefaults": {
+      "description": "Defaults aplicados a todos los samplers HTTP del escenario.",
+      "properties": {
+        "base_url": {
+          "description": "URL base (esquema://host:puerto/ruta) para resolver URLs relativas.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "connect_timeout_ms": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "follow_redirects": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "headers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Headers por defecto.",
+          "type": "object"
+        },
+        "response_timeout_ms": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "HttpMethod": {
+      "enum": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "PATCH",
+        "HEAD",
+        "OPTIONS"
+      ],
+      "type": "string"
+    },
+    "HttpRequest": {
+      "description": "Petición HTTP (HTTP Sampler).",
+      "properties": {
+        "assertions": {
+          "items": {
+            "$ref": "#/$defs/Assertion"
+          },
+          "type": "array"
+        },
+        "body": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Body"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "extractors": {
+          "items": {
+            "$ref": "#/$defs/Extractor"
+          },
+          "type": "array"
+        },
+        "follow_redirects": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "headers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "method": {
+          "$ref": "#/$defs/HttpMethod"
+        },
+        "name": {
+          "type": "string"
+        },
+        "query": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "timeout_ms": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "timers": {
+          "items": {
+            "$ref": "#/$defs/Timer"
+          },
+          "type": "array"
+        },
+        "url": {
+          "description": "URL (puede ser relativa a `defaults.base_url`) y contener `${var}`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "method",
+        "url"
+      ],
+      "type": "object"
+    },
+    "IfController": {
+      "description": "If Controller: ejecuta sus pasos si `condition` es verdadera (expresión simple).",
+      "properties": {
+        "condition": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/Step"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "condition",
+        "steps"
+      ],
+      "type": "object"
+    },
+    "InterleaveController": {
+      "description": "Interleave Controller: en cada pasada ejecuta el siguiente hijo (orden rotatorio).",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/Step"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "steps"
+      ],
+      "type": "object"
+    },
+    "KafkaRequest": {
+      "description": "Kafka producer sampler (Fase 7).",
+      "properties": {
+        "brokers": {
+          "description": "Lista de brokers (host:puerto). Soporta `${var}`.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "headers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "key": {
+          "description": "Clave del mensaje (opcional, soporta `${var}`).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "partition": {
+          "description": "Partición destino (opcional; por defecto 0).",
+          "format": "int32",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "payload": {
+          "description": "Payload del mensaje (plantilla con `${var}`).",
+          "type": "string"
+        },
+        "topic": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "brokers",
+        "topic",
+        "payload"
+      ],
+      "type": "object"
+    },
+    "LoadProfile": {
+      "description": "Perfil de carga de un grupo de hilos.",
+      "properties": {
+        "duration_secs": {
+          "description": "Duración total tope (segundos). None = acotado por `iterations`.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "hold_secs": {
+          "default": 0,
+          "description": "Periodo en régimen estable (segundos). 0 si no se usa.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "iterations": {
+          "description": "Iteraciones por VU. None = acotado por `duration_secs`.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "ramp_down_secs": {
+          "default": 0,
+          "description": "Periodo de descenso (segundos). 0 si no se usa.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "ramp_up_secs": {
+          "default": 0,
+          "description": "Periodo de arranque escalonado (segundos).",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "virtual_users": {
+          "description": "Número de usuarios virtuales (hilos).",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "virtual_users"
+      ],
+      "type": "object"
+    },
+    "LoopController": {
+      "description": "Loop Controller: repite sus pasos `count` veces.",
+      "properties": {
+        "count": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/Step"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "count",
+        "steps"
+      ],
+      "type": "object"
+    },
+    "Metadata": {
+      "description": "Metadatos no semánticos del escenario.",
+      "properties": {
+        "generator": {
+          "description": "Quién generó el escenario (p.ej. \"perfkit-jmx-importer 0.1.0\").",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "notes": {
+          "description": "Notas libres para el QA.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "source": {
+          "description": "Ruta del archivo de origen (p.ej. el .jmx importado).",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "OnError": {
+      "enum": [
+        "continue",
+        "stop_thread",
+        "stop_test"
+      ],
+      "type": "string"
+    },
+    "RandomController": {
+      "description": "Random Controller: en cada pasada ejecuta un hijo elegido al azar.",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/Step"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "steps"
+      ],
+      "type": "object"
+    },
+    "Step": {
+      "description": "Paso ejecutable dentro de un grupo de hilos o controlador.",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/HttpRequest",
+          "properties": {
+            "type": {
+              "const": "http",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "$ref": "#/$defs/Transaction",
+          "properties": {
+            "type": {
+              "const": "transaction",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "$ref": "#/$defs/LoopController",
+          "properties": {
+            "type": {
+              "const": "loop",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "$ref": "#/$defs/IfController",
+          "properties": {
+            "type": {
+              "const": "if",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "$ref": "#/$defs/WhileController",
+          "properties": {
+            "type": {
+              "const": "while",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "$ref": "#/$defs/ThroughputController",
+          "description": "Throughput Controller (porcentaje de ejecuciones).",
+          "properties": {
+            "type": {
+              "const": "throughput",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "$ref": "#/$defs/InterleaveController",
+          "description": "Interleave Controller (un hijo por pasada, rotatorio).",
+          "properties": {
+            "type": {
+              "const": "interleave",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "$ref": "#/$defs/RandomController",
+          "description": "Random Controller (un hijo al azar por pasada).",
+          "properties": {
+            "type": {
+              "const": "random",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "$ref": "#/$defs/KafkaRequest",
+          "description": "Kafka producer sampler (publica un mensaje en un topic).",
+          "properties": {
+            "type": {
+              "const": "kafka",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        {
+          "$ref": "#/$defs/Timer",
+          "properties": {
+            "type": {
+              "const": "timer",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "ThreadGroup": {
+      "description": "Grupo de hilos (Thread Group): perfil de carga + pasos.",
+      "properties": {
+        "load": {
+          "$ref": "#/$defs/LoadProfile"
+        },
+        "name": {
+          "type": "string"
+        },
+        "on_error": {
+          "$ref": "#/$defs/OnError",
+          "default": "continue",
+          "description": "Qué hacer ante error de muestra."
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/Step"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "load",
+        "steps"
+      ],
+      "type": "object"
+    },
+    "ThroughputController": {
+      "description": "Throughput Controller: ejecuta sus pasos en un porcentaje de las pasadas.",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "percent": {
+          "description": "Porcentaje de pasadas en que se ejecutan los hijos (0.0–100.0).",
+          "format": "double",
+          "type": "number"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/Step"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "percent",
+        "steps"
+      ],
+      "type": "object"
+    },
+    "Timer": {
+      "description": "Temporizadores (think time / pacing).",
+      "oneOf": [
+        {
+          "description": "Constant Timer.",
+          "properties": {
+            "delay_ms": {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "timer": {
+              "const": "constant",
+              "type": "string"
+            }
+          },
+          "required": [
+            "timer",
+            "delay_ms"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "Uniform Random Timer: delay = base + U(0, range).",
+          "properties": {
+            "base_ms": {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "range_ms": {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "timer": {
+              "const": "uniform_random",
+              "type": "string"
+            }
+          },
+          "required": [
+            "timer",
+            "base_ms",
+            "range_ms"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "Gaussian Random Timer: delay = offset + N(0, deviation).",
+          "properties": {
+            "deviation_ms": {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "offset_ms": {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "timer": {
+              "const": "gaussian",
+              "type": "string"
+            }
+          },
+          "required": [
+            "timer",
+            "offset_ms",
+            "deviation_ms"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "Constant Throughput Timer (objetivo de muestras por minuto).",
+          "properties": {
+            "target_per_minute": {
+              "format": "double",
+              "type": "number"
+            },
+            "timer": {
+              "const": "constant_throughput",
+              "type": "string"
+            }
+          },
+          "required": [
+            "timer",
+            "target_per_minute"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "Transaction": {
+      "description": "Controlador de transacción (agrupa pasos como una unidad de reporte).",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/Step"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "steps"
+      ],
+      "type": "object"
+    },
+    "WhileController": {
+      "description": "While Controller: repite mientras `condition` sea verdadera (con tope de seguridad).",
+      "properties": {
+        "condition": {
+          "type": "string"
+        },
+        "max_iterations": {
+          "default": 10000,
+          "description": "Tope de iteraciones para evitar bucles infinitos.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/Step"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "condition",
+        "steps"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Escenario completo de carga.",
+  "properties": {
+    "datasets": {
+      "description": "Datasets CSV (CSV Data Set Config).",
+      "items": {
+        "$ref": "#/$defs/Dataset"
+      },
+      "type": "array"
+    },
+    "defaults": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/HttpDefaults"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Defaults HTTP (HTTP Request Defaults)."
+    },
+    "metadata": {
+      "$ref": "#/$defs/Metadata",
+      "default": {},
+      "description": "Metadatos de origen/generación."
+    },
+    "name": {
+      "description": "Nombre legible del escenario (suele venir del Test Plan).",
+      "type": "string"
+    },
+    "thread_groups": {
+      "description": "Grupos de hilos (Thread Groups).",
+      "items": {
+        "$ref": "#/$defs/ThreadGroup"
+      },
+      "type": "array"
+    },
+    "variables": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Variables definidas por el usuario (User Defined Variables).",
+      "type": "object"
+    },
+    "version": {
+      "default": "0.3.0",
+      "description": "Versión del IR (semver).",
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "thread_groups"
+  ],
+  "title": "Scenario",
+  "type": "object"
+}

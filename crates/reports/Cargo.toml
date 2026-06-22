@@ -1,0 +1,21 @@
+[package]
+name = "reports"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "perfkit: reportes nativos (HTML offline / JSON / JUnit) y quality gate"
+
+[lib]
+name = "reports"
+path = "src/lib.rs"
+
+[dependencies]
+scenario-ir.workspace = true
+metrics.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml_ng.workspace = true
+html-escape.workspace = true
+chrono.workspace = true
+thiserror.workspace = true

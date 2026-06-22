@@ -1,0 +1,111 @@
+{{- /* Worker (plano de datos) + Service headless para descubrimiento DNS. */ -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "perfkit.worker.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "perfkit.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  replicas: {{ .Values.worker.replicas }}
+  selector:
+    matchLabels:
+      {{- include "perfkit.selectorLabels" (dict "ctx" . "component" "worker") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "perfkit.labels" . | nindent 8 }}
+        app.kubernetes.io/component: worker
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: worker
+          image: "{{ .Values.worker.image.repository }}:{{ .Values.worker.image.tag }}"
+          imagePullPolicy: {{ .Values.worker.image.pullPolicy }}
+          args:
+            - "worker"
+            - "serve"
+            - "--listen=0.0.0.0:{{ .Values.worker.service.port }}"
+            - "--coordinator-url={{ include "perfkit.coordinator.url" . }}"
+            {{- with .Values.worker.extraArgs }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          env:
+            - name: COORDINATOR_URL
+              value: {{ include "perfkit.coordinator.url" . | quote }}
+            - name: PERFKIT_WORKER_LISTEN
+              value: "0.0.0.0:{{ .Values.worker.service.port }}"
+            - name: PERFKIT_WORKER_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: RUST_LOG
+              value: "info"
+            {{- with .Values.worker.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.worker.service.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.worker.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+      {{- with .Values.worker.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.worker.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.worker.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "perfkit.worker.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "perfkit.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  # Headless: una IP por Pod worker para que el coordinator reparta la carga 1:1.
+  clusterIP: None
+  selector:
+    {{- include "perfkit.selectorLabels" (dict "ctx" . "component" "worker") | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.worker.service.port }}
+      targetPort: http
+      protocol: TCP

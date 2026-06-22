@@ -1,0 +1,29 @@
+# Escenario de demo para el modo distribuido (montado por docker-compose.distributed.yml
+# y referenciado por la CR LoadTest de ejemplo).
+#
+# Formato: IR canónico de perfkit (mismo que produce `perfkit import jmx ...` y valida
+# `perfkit validate`). Apunta al SUT de juguete "target" del compose.
+#
+# En modo distribuido, el coordinator NO ejecuta este plan localmente: reparte
+# `virtual_users` entre los N workers (p. ej. 300 VUs / 3 workers = 100 VUs c/u).
+
+name: demo-distribuida
+version: 1
+
+groups:
+  - name: humo-http
+    load:
+      # En distribuido este valor es la carga TOTAL; el coordinator la reparte.
+      virtual_users: 300
+      ramp_up_secs: 10
+      hold_secs: 40
+      ramp_down_secs: 10
+      duration_secs: 60
+    steps:
+      - http:
+          name: GET raíz del target
+          method: GET
+          # El coordinator/worker resuelve "target" por DNS dentro de la red.
+          url: http://target:8080/
+          assertions:
+            - status_below: 400

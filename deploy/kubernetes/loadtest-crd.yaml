@@ -1,0 +1,192 @@
+# CustomResourceDefinition: LoadTest (perfkit.dev/v1alpha1).
+#
+# Declara una prueba de carga distribuida como recurso nativo de Kubernetes. El
+# operator de perfkit (ver deploy/operator/README.md) observa estos objetos y crea
+# un Job coordinator + Pods worker para ejecutarla, actualizando .status con el
+# resultado del reporte consolidado.
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: loadtests.perfkit.dev
+  labels:
+    app.kubernetes.io/name: perfkit
+    app.kubernetes.io/part-of: perfkit
+spec:
+  group: perfkit.dev
+  scope: Namespaced
+  names:
+    kind: LoadTest
+    listKind: LoadTestList
+    plural: loadtests
+    singular: loadtest
+    shortNames:
+      - lt
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        # Permite que el operator actualice .status sin tocar .spec.
+        status: {}
+      additionalPrinterColumns:
+        - name: Phase
+          type: string
+          jsonPath: .status.phase
+        - name: VUs
+          type: integer
+          jsonPath: .spec.vus
+        - name: Workers
+          type: integer
+          jsonPath: .spec.workers
+        - name: Throughput
+          type: string
+          jsonPath: .status.throughput
+        - name: ErrorRate
+          type: string
+          jsonPath: .status.errorRate
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+      schema:
+        openAPIV3Schema:
+          type: object
+          required:
+            - spec
+          properties:
+            spec:
+              type: object
+              description: Definición deseada de la prueba de carga distribuida.
+              required:
+                - scenario
+                - vus
+              properties:
+                scenario:
+                  type: object
+                  description: >-
+                    Plan a ejecutar (IR canónico de perfkit). O bien inline como
+                    YAML, o bien por referencia a un ConfigMap. Exactamente uno.
+                  properties:
+                    inline:
+                      type: string
+                      description: Escenario en YAML embebido (IR canónico de perfkit).
+                    configMapRef:
+                      type: object
+                      description: Referencia a un ConfigMap que contiene el escenario.
+                      required:
+                        - name
+                      properties:
+                        name:
+                          type: string
+                          description: Nombre del ConfigMap (mismo namespace).
+                        key:
+                          type: string
+                          default: scenario.yaml
+                          description: Clave dentro del ConfigMap con el YAML del plan.
+                  oneOf:
+                    - required: ["inline"]
+                    - required: ["configMapRef"]
+                vus:
+                  type: integer
+                  format: int32
+                  minimum: 1
+                  description: >-
+                    Usuarios virtuales TOTALES a repartir entre los workers
+                    (no por worker). p. ej. vus=300, workers=3 => 100 VUs/worker.
+                durationSecs:
+                  type: integer
+                  format: int64
+                  minimum: 1
+                  default: 60
+                  description: Duración de la prueba en segundos (régimen + rampas).
+                workers:
+                  type: integer
+                  format: int32
+                  minimum: 1
+                  maximum: 1000
+                  default: 3
+                  description: Número de Pods worker a crear para repartir la carga.
+                thresholds:
+                  type: object
+                  description: >-
+                    Umbrales del quality gate. Si el reporte consolidado los
+                    supera, la prueba se marca Failed (mismas claves que
+                    examples/yaml/thresholds.yaml).
+                  properties:
+                    maxErrorRate:
+                      type: number
+                      minimum: 0
+                      maximum: 1
+                      description: Tasa de error máxima admitida (0..1). Ej. 0.05 = 5%.
+                    maxP95Ms:
+                      type: integer
+                      format: int64
+                      minimum: 0
+                      description: Percentil 95 de latencia máximo en milisegundos.
+                    maxP99Ms:
+                      type: integer
+                      format: int64
+                      minimum: 0
+                      description: Percentil 99 de latencia máximo en milisegundos.
+                    minThroughputPerSec:
+                      type: number
+                      minimum: 0
+                      description: Throughput mínimo agregado (peticiones/segundo).
+            status:
+              type: object
+              description: Estado observado de la prueba, escrito por el operator.
+              properties:
+                phase:
+                  type: string
+                  description: Fase del ciclo de vida de la prueba.
+                  enum:
+                    - Pending
+                    - Provisioning
+                    - Running
+                    - Succeeded
+                    - Failed
+                throughput:
+                  type: string
+                  description: Throughput agregado del reporte consolidado (req/s).
+                errorRate:
+                  type: string
+                  description: Tasa de error agregada del reporte consolidado.
+                readyWorkers:
+                  type: integer
+                  format: int32
+                  description: Workers que ya reportaron READY (para el barrier start).
+                startTime:
+                  type: string
+                  format: date-time
+                  description: Instante en que arrancó la ejecución.
+                completionTime:
+                  type: string
+                  format: date-time
+                  description: Instante en que terminó la ejecución.
+                message:
+                  type: string
+                  description: Mensaje legible (causa del fallo, progreso, etc.).
+                observedGeneration:
+                  type: integer
+                  format: int64
+                  description: .metadata.generation reconciliada por última vez.
+                conditions:
+                  type: array
+                  description: Condiciones estándar de Kubernetes.
+                  items:
+                    type: object
+                    required:
+                      - type
+                      - status
+                    properties:
+                      type:
+                        type: string
+                      status:
+                        type: string
+                        enum: ["True", "False", "Unknown"]
+                      reason:
+                        type: string
+                      message:
+                        type: string
+                      lastTransitionTime:
+                        type: string
+                        format: date-time

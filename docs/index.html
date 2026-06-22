@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>perfkit — performance testing moderno, con migración real desde JMeter</title>
+<meta name="description" content="perfkit: suite de performance testing en Rust/Tokio con app nativa. Importa tu .jmx con reporte de fidelidad, ejecútalo local, obtén reportes que reconoces y llévalo a CI — usando una fracción de la memoria de JMeter." />
+<meta property="og:title" content="perfkit — alternativa moderna a Apache JMeter" />
+<meta property="og:description" content="Migra tu .jmx, ejecuta local, reporta y lleva a CI. Motor Rust/Tokio, app nativa, ~50× menos memoria que JMeter." />
+<meta property="og:type" content="website" />
+<style>
+  :root{
+    --indigo:#6366f1; --indigo-600:#4f46e5; --indigo-700:#4338ca;
+    --ink:#0f172a; --ink-2:#1e293b; --slate:#475569; --muted:#64748b; --faint:#94a3b8;
+    --line:#e2e8f0; --bg:#f8fafc; --bg-2:#eef2f7; --white:#fff;
+    --green:#10b981; --amber:#f59e0b; --red:#ef4444;
+    --radius:16px; --maxw:1120px;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:var(--sans);color:var(--ink);background:var(--bg);line-height:1.6;-webkit-font-smoothing:antialiased}
+  a{color:var(--indigo-600);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  h1,h2,h3{line-height:1.15;letter-spacing:-.02em;margin:0 0 .4em}
+  h2{font-size:clamp(1.6rem,3vw,2.3rem);text-align:center}
+  .section{padding:84px 0}
+  .section .lead{text-align:center;color:var(--slate);max-width:660px;margin:0 auto 48px;font-size:1.05rem}
+  .eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:.72rem;font-weight:700;color:var(--indigo-600);text-align:center;margin-bottom:10px}
+
+  /* nav */
+  nav{position:sticky;top:0;z-index:50;background:rgba(248,250,252,.85);backdrop-filter:saturate(160%) blur(10px);border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;align-items:center;gap:24px;height:62px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.15rem;color:var(--ink)}
+  .brand .mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--indigo),var(--indigo-700));display:grid;place-items:center;box-shadow:0 4px 12px rgba(79,70,229,.35)}
+  .navlinks{display:flex;gap:22px;margin-left:auto;align-items:center}
+  .navlinks a{color:var(--slate);font-weight:500;font-size:.93rem}
+  .navlinks a:hover{color:var(--ink);text-decoration:none}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:.93rem;padding:10px 18px;border-radius:11px;border:1px solid transparent;cursor:pointer;transition:.15s}
+  .btn-primary{background:var(--indigo-600);color:#fff;box-shadow:0 6px 18px rgba(79,70,229,.3)}
+  .btn-primary:hover{background:var(--indigo-700);text-decoration:none;transform:translateY(-1px)}
+  .btn-ghost{background:#fff;color:var(--ink);border-color:var(--line)}
+  .btn-ghost:hover{border-color:var(--faint);text-decoration:none}
+  .btn-dark{background:var(--ink);color:#fff}
+  .btn-dark:hover{background:var(--ink-2);text-decoration:none}
+  @media(max-width:760px){.navlinks a:not(.btn){display:none}}
+
+  /* hero */
+  .hero{background:radial-gradient(1200px 500px at 50% -10%,#1e293b 0,#0f172a 60%);color:#e2e8f0;padding:96px 0 0;overflow:hidden}
+  .hero .wrap{text-align:center}
+  .hero .pill{display:inline-flex;align-items:center;gap:8px;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.35);color:#c7d2fe;padding:6px 14px;border-radius:999px;font-size:.8rem;font-weight:600;margin-bottom:22px}
+  .hero h1{color:#fff;font-size:clamp(2.2rem,5.4vw,3.7rem);max-width:18ch;margin:0 auto .22em}
+  .hero h1 .grad{background:linear-gradient(120deg,#818cf8,#60a5fa);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p.sub{color:#94a3b8;font-size:clamp(1.05rem,2.2vw,1.3rem);max-width:60ch;margin:0 auto 30px}
+  .hero .cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:54px}
+  .hero .shot{max-width:980px;margin:0 auto;transform:translateY(20px);border-radius:14px 14px 0 0;border:1px solid #334155;border-bottom:none;box-shadow:0 -10px 60px rgba(2,6,23,.6);display:block;width:100%}
+
+  /* stats */
+  .stats{background:var(--ink);color:#cbd5e1;border-top:1px solid #1e293b}
+  .stats .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:34px 24px;text-align:center}
+  .stats .n{font-size:clamp(1.6rem,3.2vw,2.4rem);font-weight:800;color:#fff;letter-spacing:-.02em}
+  .stats .n .u{color:#818cf8}
+  .stats .l{font-size:.82rem;color:#94a3b8;margin-top:2px}
+  @media(max-width:680px){.stats .wrap{grid-template-columns:repeat(2,1fr);gap:24px}}
+
+  /* cards grid */
+  .grid{display:grid;gap:20px}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  @media(max-width:880px){.g3{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:620px){.g3,.g2{grid-template-columns:1fr}}
+  .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:24px;transition:.15s}
+  .card:hover{border-color:#c7d2fe;box-shadow:0 12px 30px rgba(15,23,42,.06);transform:translateY(-2px)}
+  .card .ico{width:42px;height:42px;border-radius:11px;background:#eef2ff;color:var(--indigo-600);display:grid;place-items:center;margin-bottom:14px}
+  .card h3{font-size:1.08rem;margin-bottom:.3em}
+  .card p{color:var(--slate);font-size:.94rem;margin:0}
+
+  /* comparison */
+  .cmp{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:#fff}
+  table{border-collapse:collapse;width:100%;min-width:640px}
+  th,td{text-align:left;padding:14px 18px;border-bottom:1px solid var(--line);font-size:.93rem;vertical-align:top}
+  thead th{background:var(--bg-2);font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  thead th.pk{color:var(--indigo-700)}
+  tbody td:first-child{font-weight:600;color:var(--ink-2);white-space:nowrap}
+  td.pk{color:var(--ink);font-weight:500}
+  tbody tr:last-child td{border-bottom:none}
+  .note{text-align:center;color:var(--muted);font-size:.86rem;margin-top:16px;max-width:680px;margin-inline:auto}
+
+  /* gallery */
+  .gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  @media(max-width:620px){.gallery{grid-template-columns:1fr}}
+  .gallery figure{margin:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 6px 18px rgba(15,23,42,.05)}
+  .gallery img{width:100%;display:block}
+  .gallery figcaption{padding:11px 16px;font-size:.86rem;color:var(--slate);border-top:1px solid var(--line);background:#fff}
+
+  /* code */
+  pre{background:#0f172a;color:#e2e8f0;border-radius:14px;padding:20px 22px;overflow-x:auto;font-family:var(--mono);font-size:.86rem;line-height:1.7;margin:0}
+  pre .c{color:#64748b}
+  pre .k{color:#818cf8}
+  .codecols{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+  @media(max-width:760px){.codecols{grid-template-columns:1fr}}
+  .codecols h3{font-size:1rem;margin-bottom:10px;color:var(--ink-2)}
+
+  /* community */
+  .community{background:linear-gradient(180deg,var(--bg) 0,var(--bg-2) 100%)}
+  .issue-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:8px}
+  @media(max-width:820px){.issue-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:480px){.issue-grid{grid-template-columns:1fr}}
+  .issue{display:block;background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;transition:.15s}
+  .issue:hover{border-color:#c7d2fe;transform:translateY(-2px);text-decoration:none;box-shadow:0 12px 30px rgba(15,23,42,.06)}
+  .issue .e{font-size:1.5rem}
+  .issue b{display:block;color:var(--ink);margin:8px 0 3px}
+  .issue span{color:var(--slate);font-size:.86rem}
+
+  footer{background:var(--ink);color:#94a3b8;padding:40px 0;text-align:center;font-size:.9rem}
+  footer a{color:#c7d2fe}
+  .center{text-align:center}
+  .mt{margin-top:32px}
+  ul.checks{list-style:none;padding:0;max-width:640px;margin:0 auto;display:grid;gap:10px}
+  ul.checks li{display:flex;gap:10px;align-items:flex-start;color:var(--slate)}
+  ul.checks svg{flex:none;margin-top:3px;color:var(--green)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <span class="brand">
+      <span class="mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></span>
+      perfkit
+    </span>
+    <span class="navlinks">
+      <a href="#capacidades">Capacidades</a>
+      <a href="#comparacion">vs JMeter</a>
+      <a href="#casos">Casos de uso</a>
+      <a href="#empezar">Empezar</a>
+      <a href="#comunidad">Comunidad</a>
+      <a class="btn btn-dark" data-link="repo" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.5v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.8-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.4 11.4 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5Z"/></svg>GitHub</a>
+    </span>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="pill">⚡ Alternativa moderna a Apache JMeter</span>
+    <h1>Performance testing que <span class="grad">migra tu JMeter</span> y pesa una fracción</h1>
+    <p class="sub">Importa tu <code>.jmx</code>, entiende qué migró y qué no, ejecútalo local desde la app o el CLI, obtén reportes que reconoces y llévalo a CI — con un motor en <b>Rust/Tokio</b> que usa <b>~50× menos memoria</b>.</p>
+    <div class="cta">
+      <a class="btn btn-primary" data-link="repo" href="#">Ver en GitHub →</a>
+      <a class="btn btn-ghost" data-link="issues" href="#">Reportar / proponer</a>
+    </div>
+    <img class="shot" src="screenshots/readme-04-report-resumen.png" alt="Reporte de perfkit con KPIs y series temporales" />
+  </div>
+</header>
+
+<section class="stats">
+  <div class="wrap">
+    <div><div class="n">~50<span class="u">×</span></div><div class="l">menos memoria que JMeter*</div></div>
+    <div><div class="n">100<span class="u">%</span></div><div class="l">fidelidad en el ejemplo de import</div></div>
+    <div><div class="n">3<span class="u">+1</span></div><div class="l">formatos de reporte + quality gate</div></div>
+    <div><div class="n">CLI<span class="u"> + UI</span></div><div class="l">misma ejecución, terminal o app nativa</div></div>
+  </div>
+</section>
+
+<!-- principio rector -->
+<section class="section">
+  <div class="wrap">
+    <p class="eyebrow">Principio rector</p>
+    <h2 style="max-width:20ch;margin-inline:auto">“Migré, entendí qué pasó y lo llevé a CI sin reescribir todo”</h2>
+    <ul class="checks mt">
+      <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Importé mi JMX y <b>entendí qué migró y qué no</b> (reporte de fidelidad, sin fallos silenciosos).</li>
+      <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Ejecuté la prueba <b>localmente</b> desde la app nativa o el CLI.</li>
+      <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Obtuve un <b>reporte que reconozco</b> (percentiles, throughput, errores, series).</li>
+      <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Lo llevé a <b>CI con exit codes</b> y un quality gate — sin reescribir todo.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- capacidades -->
+<section class="section" id="capacidades" style="background:#fff;border-block:1px solid var(--line)">
+  <div class="wrap">
+    <p class="eyebrow">Capacidades</p>
+    <h2>Todo lo que esperas, repensado</h2>
+    <p class="lead">Un motor moderno, una app nativa para QA y un CLI listo para pipelines.</p>
+    <div class="grid g3">
+      <div class="card"><div class="ico">🔄</div><h3>Importa tu JMX</h3><p>Parser de JMeter → IR canónico con <b>reporte de fidelidad</b> por elemento (migrated / assisted / unsupported / ignored). Nunca falla en silencio.</p></div>
+      <div class="card"><div class="ico">⚙️</div><h3>Motor Rust + Tokio</h3><p>VUs asíncronos, ramp-up/hold/ramp-down, timers, assertions y extractores. Medición con reloj monotónico y agregación fuera del hot path.</p></div>
+      <div class="card"><div class="ico">📊</div><h3>Reporte por pestañas</h3><p>Resumen, latencia (curva de percentiles, histograma, TTFB, Apdex), capacidad (saturación, bytes), errores, SLA, heatmap. HTML offline + JSON + JUnit.</p></div>
+      <div class="card"><div class="ico">🔎</div><h3>Inspección de peticiones</h3><p>Captura request/response por petición (como el View Results Tree) con redacción de secretos y tope de memoria configurable.</p></div>
+      <div class="card"><div class="ico">🖥️</div><h3>App nativa</h3><p>Tauri + React: crea o importa planes, edítalos, prueba una sola petición, ejecuta con dashboard en vivo y visualiza resultados — sin escribir código.</p></div>
+      <div class="card"><div class="ico">⏱️</div><h3>CLI para CI</h3><p><code>import · validate · debug · run · gate</code> con exit codes confiables, logs y umbrales. Reportes como artefactos de pipeline.</p></div>
+      <div class="card"><div class="ico">🌐</div><h3>Distribuido</h3><p>Coordinator/worker que reparte la carga entre nodos (no la duplica) y consolida métricas.</p></div>
+      <div class="card"><div class="ico">📈</div><h3>Histórico y baselines</h3><p>Guarda corridas, fija un baseline y detecta regresiones y tendencias entre ejecuciones.</p></div>
+      <div class="card"><div class="ico">🔐</div><h3>Gobernanza</h3><p>Redacción de secretos, plugins WASM firmados e IA opcional con SaaS apagado por defecto — nada sale sin tu opt-in.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- comparacion -->
+<section class="section" id="comparacion">
+  <div class="wrap">
+    <p class="eyebrow">perfkit vs JMeter</p>
+    <h2>Por qué puede ser mejor</h2>
+    <p class="lead">Mismo flujo QA que ya conoces, con un motor moderno detrás.</p>
+    <div class="cmp">
+      <table>
+        <thead><tr><th>Aspecto</th><th class="pk">perfkit</th><th>Apache JMeter</th></tr></thead>
+        <tbody>
+          <tr><td>Runtime</td><td class="pk">Rust + Tokio (async)</td><td>Java/JVM (un hilo por VU)</td></tr>
+          <tr><td>Memoria por carga</td><td class="pk">~50× menos en el benchmark*</td><td>Alta (JVM + hilos)</td></tr>
+          <tr><td>Interfaz</td><td class="pk">App nativa moderna (Tauri)</td><td>GUI Swing pesada</td></tr>
+          <tr><td>Formato del plan</td><td class="pk">IR legible (YAML/JSON) + binario + JMX</td><td>XML verboso</td></tr>
+          <tr><td>Migración</td><td class="pk">Importa tu .jmx con reporte de fidelidad</td><td>—</td></tr>
+          <tr><td>Inspección a alta carga</td><td class="pk">Captura acotada (protege memoria)</td><td>View Results Tree (revienta memoria)</td></tr>
+          <tr><td>CI</td><td class="pk">Exit codes + quality gate nativos</td><td>Requiere configuración/plugins</td></tr>
+          <tr><td>Reporte</td><td class="pk">HTML offline + JSON + JUnit + analítica</td><td>Listeners / plugins</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">* Benchmark local reproducible (mismo plan y target). El throughput sale a la par cuando el target satura; la ventaja medida es la <b>memoria</b>. <b>En honor a la verdad:</b> JMeter sigue siendo más maduro en cobertura de protocolos y ecosistema de plugins — perfkit prioriza el flujo HTTP/QA y una migración creíble.</p>
+  </div>
+</section>
+
+<!-- casos de uso -->
+<section class="section" id="casos" style="background:#fff;border-block:1px solid var(--line)">
+  <div class="wrap">
+    <p class="eyebrow">Casos de uso</p>
+    <h2>Para qué lo usas</h2>
+    <div class="grid g3 mt">
+      <div class="card"><h3>🚦 Smoke test</h3><p>Una corrida corta con captura para validar que el flujo responde antes de la prueba real.</p></div>
+      <div class="card"><h3>🏋️ Prueba de carga</h3><p>Sube VUs con ramp-up y mide percentiles, throughput, errores y el punto de saturación.</p></div>
+      <div class="card"><h3>✅ Baseline en CI</h3><p>Guarda un baseline y falla el pipeline (exit code) si una corrida regresiona.</p></div>
+      <div class="card"><h3>🔀 Comparar entornos</h3><p>El mismo plan contra staging/local cambiando solo la URL base.</p></div>
+      <div class="card"><h3>🐞 Depurar un endpoint</h3><p>Prueba una sola petición e inspecciona request/response y variables al vuelo.</p></div>
+      <div class="card"><h3>📦 Migrar desde JMeter</h3><p>Importa tu suite .jmx y entiende qué migró antes de invertir en reescribir.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- galeria -->
+<section class="section">
+  <div class="wrap">
+    <p class="eyebrow">La app</p>
+    <h2>Hecha para QA, no para programar</h2>
+    <p class="lead">Primera pantalla operativa, sin landing interna, vista YAML opcional.</p>
+    <div class="gallery">
+      <figure><img src="screenshots/readme-01-inicio.png" alt="Pantalla de inicio"><figcaption>Inicio — crear, importar, abrir ejemplo o cargar resultados</figcaption></figure>
+      <figure><img src="screenshots/readme-02-plan.png" alt="Árbol del plan"><figcaption>Plan — árbol nativo + editores + “Probar petición”</figcaption></figure>
+      <figure><img src="screenshots/readme-03-ejecutar.png" alt="Vista de ejecución"><figcaption>Ejecutar — overrides, captura y dashboard en vivo</figcaption></figure>
+      <figure><img src="screenshots/readme-05-latencia.png" alt="Pestaña de latencia"><figcaption>Latencia — curva de percentiles + histograma</figcaption></figure>
+      <figure><img src="screenshots/readme-06-heatmap.png" alt="Heatmap de latencia"><figcaption>Heatmap — latencia × tiempo</figcaption></figure>
+      <figure><img src="screenshots/readme-07-peticiones.png" alt="Inspección de peticiones"><figcaption>Peticiones — árbol de resultados con detalle</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- empezar -->
+<section class="section" id="empezar" style="background:#fff;border-block:1px solid var(--line)">
+  <div class="wrap">
+    <p class="eyebrow">Empezar</p>
+    <h2>En marcha en minutos</h2>
+    <p class="lead">Desde la terminal o la app nativa.</p>
+    <div class="codecols">
+      <div>
+        <h3>CLI</h3>
+<pre><span class="c"># importar → validar → ejecutar → gate</span>
+perfkit <span class="k">import</span> jmx plan.jmx -o plan.yaml
+perfkit <span class="k">validate</span> plan.yaml
+perfkit <span class="k">run</span> plan.yaml --vus 50 --duration 20 \
+  --out reports/run-001
+perfkit <span class="k">gate</span> reports/run-001/summary.json \
+  --thresholds thresholds.yaml</pre>
+      </div>
+      <div>
+        <h3>App nativa</h3>
+<pre><span class="c"># requiere Rust + Node/pnpm</span>
+cd ui &amp;&amp; pnpm install
+pnpm tauri dev        <span class="c"># desarrollo</span>
+pnpm tauri build      <span class="c"># binario release</span>
+
+<span class="c"># o solo construir el workspace</span>
+cargo build --workspace</pre>
+      </div>
+    </div>
+    <p class="center mt"><a class="btn btn-primary" data-link="repo" href="#">Léeme y código en GitHub →</a></p>
+  </div>
+</section>
+
+<!-- comunidad -->
+<section class="section community" id="comunidad">
+  <div class="wrap">
+    <p class="eyebrow">Comunidad</p>
+    <h2>¿Encontraste algo o tienes una idea?</h2>
+    <p class="lead">Abre un issue con la plantilla adecuada — están diseñadas para entenderse y priorizarse rápido.</p>
+    <div class="issue-grid">
+      <a class="issue" data-link="new-bug" href="#"><span class="e">🐞</span><b>Reportar un bug</b><span>Algo no funciona como debería.</span></a>
+      <a class="issue" data-link="new-feature" href="#"><span class="e">✨</span><b>Proponer mejora</b><span>Una funcionalidad o cambio.</span></a>
+      <a class="issue" data-link="new-migration" href="#"><span class="e">🔄</span><b>Problema de migración</b><span>Un elemento del JMX no migró bien.</span></a>
+      <a class="issue" data-link="new-question" href="#"><span class="e">❓</span><b>Pregunta</b><span>Dudas de uso.</span></a>
+    </div>
+    <p class="center mt"><a class="btn btn-ghost" data-link="issues" href="#">Ver todos los issues</a></p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b style="color:#fff">perfkit</b> — performance testing moderno. Licencia Apache-2.0.</p>
+    <p><a data-link="repo" href="#">GitHub</a> · <a data-link="issues" href="#">Issues</a> · nombre temporal/renombrable</p>
+  </div>
+</footer>
+
+<script>
+  // Detecta el repo desde la URL de GitHub Pages de proyecto (usuario.github.io/repo).
+  // Si no, usa el fallback — reemplázalo por tu repo real.
+  function repoUrl(){
+    try{
+      var m = location.hostname.match(/^([^.]+)\.github\.io$/);
+      var seg = location.pathname.split('/').filter(Boolean)[0];
+      if(m && seg) return 'https://github.com/' + m[1] + '/' + seg;
+    }catch(e){}
+    return 'https://github.com/USUARIO/REPO'; // ← edítalo si no usas Pages de proyecto
+  }
+  var REPO = repoUrl();
+  var links = {
+    repo: REPO,
+    issues: REPO + '/issues',
+    'new-bug': REPO + '/issues/new?template=bug_report.yml',
+    'new-feature': REPO + '/issues/new?template=feature_request.yml',
+    'new-migration': REPO + '/issues/new?template=migration_issue.yml',
+    'new-question': REPO + '/issues/new?template=question.yml'
+  };
+  document.querySelectorAll('[data-link]').forEach(function(a){
+    var k = a.getAttribute('data-link');
+    if(links[k]){ a.href = links[k]; a.target = '_blank'; a.rel = 'noopener'; }
+  });
+</script>
+</body>
+</html>

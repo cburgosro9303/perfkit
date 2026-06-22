@@ -1,0 +1,114 @@
+# perfkit worker — plano de datos (Deployment 3 réplicas + Service headless).
+#
+# El Service es headless (clusterIP: None) para que el coordinator descubra las
+# IPs de cada Pod worker por DNS (A records) y reparta la carga 1:1, en lugar de
+# que un ClusterIP balancee y "esconda" los workers detrás de una sola VIP.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: perfkit-worker
+  namespace: perfkit
+  labels:
+    app.kubernetes.io/name: perfkit
+    app.kubernetes.io/component: worker
+    app.kubernetes.io/part-of: perfkit
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: perfkit
+      app.kubernetes.io/component: worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: perfkit
+        app.kubernetes.io/component: worker
+        app.kubernetes.io/part-of: perfkit
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker
+          image: perfkit/worker:0.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - "worker"
+            - "serve"
+            - "--listen=0.0.0.0:7711"
+            - "--coordinator-url=http://perfkit-coordinator.perfkit.svc.cluster.local:7700"
+          env:
+            - name: COORDINATOR_URL
+              value: "http://perfkit-coordinator.perfkit.svc.cluster.local:7700"
+            - name: PERFKIT_WORKER_LISTEN
+              value: "0.0.0.0:7711"
+            # Identidad del worker (útil para logs/métricas y barrier start).
+            - name: PERFKIT_WORKER_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: RUST_LOG
+              value: "info"
+          ports:
+            - name: http
+              containerPort: 7711
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "256Mi"
+            limits:
+              cpu: "2"
+              memory: "1Gi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: perfkit-worker
+  namespace: perfkit
+  labels:
+    app.kubernetes.io/name: perfkit
+    app.kubernetes.io/component: worker
+    app.kubernetes.io/part-of: perfkit
+spec:
+  # Headless: el coordinator resuelve una IP por Pod worker para repartir carga.
+  clusterIP: None
+  publishNotReadyAddresses: false
+  selector:
+    app.kubernetes.io/name: perfkit
+    app.kubernetes.io/component: worker
+  ports:
+    - name: http
+      port: 7711
+      targetPort: http
+      protocol: TCP

@@ -1,0 +1,17 @@
+[package]
+name = "http-adapter"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "perfkit: adaptador HTTP/HTTPS (reqwest/rustls) para el engine"
+
+[lib]
+name = "http_adapter"
+path = "src/lib.rs"
+
+[dependencies]
+scenario-ir.workspace = true
+reqwest.workspace = true
+tokio.workspace = true
+thiserror.workspace = true

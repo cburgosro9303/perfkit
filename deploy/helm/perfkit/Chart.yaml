@@ -1,0 +1,21 @@
+apiVersion: v2
+name: perfkit
+description: >-
+  perfkit en modo distribuido (Fase 6): coordinator (plano de control) + N workers
+  (plano de datos) para pruebas de carga sobre Kubernetes, con CRD LoadTest opcional.
+type: application
+# Versión del chart (semver del paquete Helm, independiente de appVersion).
+version: 0.1.0
+# Versión de la app perfkit que despliega por defecto (tag de imagen conceptual).
+appVersion: "0.1"
+kubeVersion: ">=1.25.0-0"
+keywords:
+  - performance-testing
+  - load-testing
+  - jmeter
+  - distributed
+home: https://github.com/perfkit/perfkit
+sources:
+  - https://github.com/perfkit/perfkit
+maintainers:
+  - name: perfkit contributors

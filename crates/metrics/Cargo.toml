@@ -1,0 +1,19 @@
+[package]
+name = "metrics"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "perfkit: agregación de métricas (histogramas, percentiles, throughput, series)"
+
+[lib]
+name = "metrics"
+path = "src/lib.rs"
+
+[dependencies]
+scenario-ir.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+hdrhistogram.workspace = true
+chrono.workspace = true

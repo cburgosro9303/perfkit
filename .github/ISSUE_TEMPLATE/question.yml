@@ -1,0 +1,33 @@
+name: ❓ Pregunta / soporte de uso
+description: Dudas sobre cómo usar perfkit (si es una conversación abierta, mejor en Discusiones)
+title: "[pregunta]: "
+labels: ["tipo: pregunta", "estado: triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Para conversaciones abiertas considera **Discusiones**. Para una duda concreta, adelante.
+  - type: textarea
+    id: pregunta
+    attributes:
+      label: Tu pregunta
+    validations:
+      required: true
+  - type: textarea
+    id: contexto
+    attributes:
+      label: Contexto
+      description: Qué intentas lograr y qué probaste (comandos, plan, salida).
+  - type: dropdown
+    id: area
+    attributes:
+      label: Tema
+      options:
+        - Migración / importación JMX
+        - Ejecución y métricas
+        - Reportes / CI
+        - UI nativa
+        - Distribuido / Kafka / plugins / IA
+        - Otro
+    validations:
+      required: true

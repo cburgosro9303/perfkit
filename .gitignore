@@ -1,0 +1,33 @@
+# Rust
+/target
+**/target
+Cargo.lock.bak
+
+# Node / UI
+node_modules
+ui/dist
+ui/.vite
+*.tsbuildinfo
+
+# Tauri
+ui/src-tauri/target
+ui/src-tauri/gen
+
+# Artefactos de ejecución
+/reports/run-*
+*.local.yaml
+
+# OS / editor
+.DS_Store
+*.swp
+.idea
+.vscode/*
+!.vscode/extensions.json
+
+# Playwright MCP scratch
+.playwright-mcp/
+
+# Bases de datos locales (histórico)
+*.db
+# Resultado por-corrida del benchmark Mockoon (se regenera)
+docs/benchmarks/mockoon-results.md

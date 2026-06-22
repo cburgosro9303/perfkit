@@ -1,0 +1,83 @@
+# Ejemplo de recurso LoadTest + ConfigMap con el plan.
+#
+# Aplica primero el CRD (loadtest-crd.yaml) y el operator (rbac.yaml + binario),
+# luego: kubectl apply -f loadtest-sample.yaml -n perfkit
+#
+# Este ejemplo referencia el escenario vía ConfigMap. También puedes embeber el
+# plan con spec.scenario.inline (ver el segundo documento, comentado).
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: demo-scenario
+  namespace: perfkit
+  labels:
+    app.kubernetes.io/name: perfkit
+    app.kubernetes.io/part-of: perfkit
+data:
+  scenario.yaml: |
+    name: demo-distribuida
+    version: 1
+    groups:
+      - name: humo-http
+        load:
+          virtual_users: 300
+          ramp_up_secs: 10
+          hold_secs: 40
+          ramp_down_secs: 10
+          duration_secs: 60
+        steps:
+          - http:
+              name: GET raíz del target
+              method: GET
+              url: http://target.perfkit.svc.cluster.local:8080/
+              assertions:
+                - status_below: 400
+---
+apiVersion: perfkit.dev/v1alpha1
+kind: LoadTest
+metadata:
+  name: demo-distribuida
+  namespace: perfkit
+  labels:
+    app.kubernetes.io/name: perfkit
+    app.kubernetes.io/part-of: perfkit
+spec:
+  scenario:
+    configMapRef:
+      name: demo-scenario
+      key: scenario.yaml
+  vus: 300
+  durationSecs: 60
+  workers: 3
+  thresholds:
+    maxErrorRate: 0.05
+    maxP95Ms: 1500
+    maxP99Ms: 3000
+    minThroughputPerSec: 1
+# ---
+# Variante con escenario embebido (descomenta y elimina el ConfigMap + configMapRef):
+#
+# apiVersion: perfkit.dev/v1alpha1
+# kind: LoadTest
+# metadata:
+#   name: demo-inline
+#   namespace: perfkit
+# spec:
+#   scenario:
+#     inline: |
+#       name: demo-inline
+#       version: 1
+#       groups:
+#         - name: humo-http
+#           load:
+#             virtual_users: 100
+#             duration_secs: 30
+#           steps:
+#             - http:
+#                 name: GET raíz
+#                 method: GET
+#                 url: http://target.perfkit.svc.cluster.local:8080/
+#   vus: 100
+#   durationSecs: 30
+#   workers: 2

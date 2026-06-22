@@ -1,0 +1,51 @@
+name: 🔄 Problema de migración desde JMeter
+description: Un elemento del JMX no migró, migró mal, o el reporte de fidelidad no es claro
+title: "[migración]: "
+labels: ["tipo: migración", "área: importador-jmx", "estado: triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        perfkit promete **no fallar en silencio**: cada elemento se clasifica como
+        `migrated / assisted / unsupported / ignored`. Si algo no cuadra, ayúdanos con el detalle.
+  - type: textarea
+    id: que-paso
+    attributes:
+      label: ¿Qué elemento de JMeter y qué pasó?
+      description: Por ejemplo, mi JSR223 PostProcessor salió como assisted pero esperaba migración nativa.
+    validations:
+      required: true
+  - type: dropdown
+    id: clasificacion
+    attributes:
+      label: ¿Cómo lo clasificó el reporte de fidelidad?
+      options:
+        - "migrated (pero el resultado es incorrecto)"
+        - "assisted (esperaba migración nativa)"
+        - "unsupported"
+        - "ignored"
+        - "No aparece en el reporte (posible fallo silencioso)"
+        - "No estoy seguro"
+    validations:
+      required: true
+  - type: textarea
+    id: jmx
+    attributes:
+      label: Fragmento del JMX (el elemento problemático)
+      description: Pega solo el nodo relevante. **Quita credenciales, tokens y URLs internas.**
+      render: xml
+    validations:
+      required: true
+  - type: textarea
+    id: esperado
+    attributes:
+      label: ¿Qué esperabas que produjera en el IR / la ejecución?
+    validations:
+      required: true
+  - type: checkboxes
+    id: previo
+    attributes:
+      label: Antes de enviar
+      options:
+        - label: Quité datos sensibles (tokens, contraseñas, hosts internos) del fragmento.
+          required: true

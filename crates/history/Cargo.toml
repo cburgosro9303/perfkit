@@ -1,0 +1,19 @@
+[package]
+name = "history"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "perfkit: histórico de runs, baselines, tendencias y regresión (enterprise)"
+
+[lib]
+name = "history"
+path = "src/lib.rs"
+
+[dependencies]
+metrics.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+chrono.workspace = true
+rusqlite.workspace = true

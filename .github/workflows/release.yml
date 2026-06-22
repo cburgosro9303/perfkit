@@ -1,0 +1,155 @@
+# Release de perfkit.
+#
+# Se dispara al empujar un tag `v*` (p. ej. `git tag v0.1.0 && git push origin v0.1.0`).
+#
+# Trabajos:
+#   - build:   compila el binario `perfkit` (CLI) en release para Linux, macOS (arm64 e
+#              Intel) y Windows, lo empaqueta (.tar.gz / .zip) con checksum sha256 y lo
+#              adjunta al release de GitHub.
+#   - docker:  imagen multi-arch en GHCR. No bloquea el release de binarios
+#              (continue-on-error) por si el build emulado falla o tarda.
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # --------------------------------------------------------------------------
+  # Binarios por plataforma (Windows, macOS arm64/x86_64, Linux x86_64)
+  # --------------------------------------------------------------------------
+  build:
+    name: build ${{ matrix.suffix }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            suffix: linux-x86_64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            suffix: macos-arm64
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            suffix: macos-x86_64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            suffix: windows-x86_64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Instalar toolchain de Rust 1.95
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.95.0"
+          targets: ${{ matrix.target }}
+
+      - name: Cache de cargo/target
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Compilar perfkit (release)
+        run: cargo build --release -p cli --target ${{ matrix.target }}
+
+      # Empaqueta el binario `perfkit` (.tar.gz en Unix, .zip en Windows) + sha256.
+      - name: Empaquetar
+        shell: bash
+        run: |
+          set -euo pipefail
+          BIN_DIR="target/${{ matrix.target }}/release"
+          BASE="perfkit-${GITHUB_REF_NAME}-${{ matrix.suffix }}"
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            PKG="${BASE}.zip"
+            7z a "$PKG" "./${BIN_DIR}/perfkit.exe" >/dev/null
+          else
+            PKG="${BASE}.tar.gz"
+            tar -C "$BIN_DIR" -czf "$PKG" perfkit
+          fi
+          if command -v sha256sum >/dev/null 2>&1; then
+            sha256sum "$PKG" > "$PKG.sha256"
+          else
+            shasum -a 256 "$PKG" > "$PKG.sha256"
+          fi
+          echo "PKG=$PKG" >> "$GITHUB_ENV"
+
+      - name: Publicar como asset del release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ env.PKG }}
+            ${{ env.PKG }}.sha256
+          body: |
+            ## perfkit ${{ github.ref_name }}
+
+            Suite moderna de performance testing con migración real desde Apache JMeter.
+
+            **Binarios del CLI `perfkit`** (descarga el de tu plataforma, descomprime y ejecuta):
+
+            | Plataforma | Archivo |
+            |---|---|
+            | Linux x86_64 | `perfkit-${{ github.ref_name }}-linux-x86_64.tar.gz` |
+            | macOS Apple Silicon | `perfkit-${{ github.ref_name }}-macos-arm64.tar.gz` |
+            | macOS Intel | `perfkit-${{ github.ref_name }}-macos-x86_64.tar.gz` |
+            | Windows x86_64 | `perfkit-${{ github.ref_name }}-windows-x86_64.zip` |
+
+            Cada archivo trae su `.sha256`. La app de escritorio se construye con `pnpm -C ui tauri build`.
+
+            Sitio: https://cburgosro9303.github.io/perfkit/ · Guía: ver `README.md`.
+
+  # --------------------------------------------------------------------------
+  # Imagen de contenedor en GHCR (multi-arch) — no bloquea el release
+  # --------------------------------------------------------------------------
+  docker:
+    name: docker (ghcr.io)
+    runs-on: ubuntu-latest
+    needs: build
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Configurar Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login en GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Derivar metadatos de la imagen
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+
+      - name: Build & push (multi-arch)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

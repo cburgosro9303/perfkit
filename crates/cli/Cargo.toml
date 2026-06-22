@@ -1,0 +1,32 @@
+[package]
+name = "cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "perfkit: interfaz de línea de comandos"
+
+[[bin]]
+name = "perfkit"
+path = "src/main.rs"
+
+[dependencies]
+scenario-ir.workspace = true
+jmx-importer.workspace = true
+engine.workspace = true
+metrics.workspace = true
+reports.workspace = true
+security.workspace = true
+cluster.workspace = true
+history.workspace = true
+ai-assist.workspace = true
+plugin-host.workspace = true
+ed25519-dalek.workspace = true
+hex.workspace = true
+clap.workspace = true
+tokio.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+serde_json.workspace = true
+serde_yaml_ng.workspace = true

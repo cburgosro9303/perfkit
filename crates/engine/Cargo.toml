@@ -1,0 +1,32 @@
+[package]
+name = "engine"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "perfkit: motor de ejecución (scheduler, VUs, timers, assertions, extractores)"
+
+[lib]
+name = "engine"
+path = "src/lib.rs"
+
+[dependencies]
+scenario-ir.workspace = true
+http-adapter.workspace = true
+kafka-adapter.workspace = true
+metrics.workspace = true
+security.workspace = true
+tokio.workspace = true
+regex.workspace = true
+serde_json.workspace = true
+serde_json_path.workspace = true
+csv.workspace = true
+rand.workspace = true
+rand_distr.workspace = true
+tracing.workspace = true
+thiserror.workspace = true
+chrono.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true
+scenario-ir.workspace = true

@@ -1,0 +1,19 @@
+[package]
+name = "ai-assist"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "perfkit: IA gobernada (local/BYOK), redacción y sugerencias revisables"
+
+[lib]
+name = "ai_assist"
+path = "src/lib.rs"
+
+[dependencies]
+scenario-ir.workspace = true
+metrics.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+regex.workspace = true

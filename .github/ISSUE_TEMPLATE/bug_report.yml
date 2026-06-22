@@ -1,0 +1,84 @@
+name: 🐞 Reporte de bug
+description: Algo no funciona como debería (importación, ejecución, reportes, UI, CLI…)
+title: "[bug]: "
+labels: ["tipo: bug", "estado: triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por reportar. Completa los campos para poder **reproducir y priorizar** rápido.
+  - type: textarea
+    id: descripcion
+    attributes:
+      label: Descripción
+      description: Qué ocurre, en una o dos frases.
+    validations:
+      required: true
+  - type: textarea
+    id: reproducir
+    attributes:
+      label: Pasos para reproducir
+      placeholder: |
+        1. perfkit import jmx mi-plan.jmx -o plan.yaml
+        2. perfkit run plan.yaml --base-url ... --vus 50 --duration 20
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: esperado
+    attributes:
+      label: Comportamiento esperado
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Comportamiento actual (errores, stack traces, salida)
+      render: shell
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área afectada
+      options:
+        - Importador JMX / fidelidad
+        - Motor de ejecución (engine)
+        - Reportes / métricas
+        - UI nativa (Tauri)
+        - CLI
+        - Distribuido (cluster)
+        - Histórico / baselines
+        - Kafka / plugins / IA
+        - Otro / no estoy seguro
+    validations:
+      required: true
+  - type: dropdown
+    id: severidad
+    attributes:
+      label: Severidad / impacto
+      description: Nos ayuda a priorizar (el equipo confirma la prioridad final).
+      options:
+        - "Crítica — bloquea por completo o corrompe datos/resultados"
+        - "Alta — funcionalidad principal rota y sin workaround"
+        - "Media — falla pero hay workaround"
+        - "Baja — cosmético o menor"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Versión de perfkit / commit
+      placeholder: "0.1.0 o el hash de git"
+  - type: input
+    id: entorno
+    attributes:
+      label: SO y modo de uso
+      placeholder: "macOS 15 · app nativa (Tauri) / CLI / demo navegador"
+  - type: checkboxes
+    id: previo
+    attributes:
+      label: Antes de enviar
+      options:
+        - label: Busqué issues similares y no encontré uno abierto.
+          required: true
+        - label: Puedo reproducirlo de forma consistente (o lo indico arriba si no).
+          required: false

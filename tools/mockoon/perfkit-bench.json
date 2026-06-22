@@ -1,0 +1,247 @@
+{
+  "uuid": "a1111111-1111-4111-8111-1111111111aa",
+  "lastMigration": 33,
+  "name": "perfkit benchmark API",
+  "endpointPrefix": "",
+  "latency": 0,
+  "port": 3001,
+  "routes": [
+    {
+      "uuid": "b0000000-0000-4000-8000-000000000001",
+      "documentation": "Endpoint rápido para benchmark de throughput (GET /).",
+      "method": "get",
+      "endpoint": "",
+      "responses": [
+        {
+          "uuid": "c0000000-0000-4000-8000-000000000001",
+          "body": "{\"ok\":true,\"id\":123,\"token\":\"abc123\"}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "OK",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": true,
+          "fallbackTo404": false,
+          "default": true,
+          "databucketID": "",
+          "bodyType": "INLINE",
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "type": "http",
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "b0000000-0000-4000-8000-000000000002",
+      "documentation": "Catálogo (eco simple, GET /get).",
+      "method": "get",
+      "endpoint": "get",
+      "responses": [
+        {
+          "uuid": "c0000000-0000-4000-8000-000000000002",
+          "body": "{\"ok\":true,\"args\":{\"page\":\"1\"},\"url\":\"/get\"}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "OK",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": true,
+          "fallbackTo404": false,
+          "default": true,
+          "databucketID": "",
+          "bodyType": "INLINE",
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "type": "http",
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "b0000000-0000-4000-8000-000000000003",
+      "documentation": "Login / carrito / checkout (acepta cuerpo, POST /post).",
+      "method": "post",
+      "endpoint": "post",
+      "responses": [
+        {
+          "uuid": "c0000000-0000-4000-8000-000000000003",
+          "body": "{\"ok\":true,\"json\":{\"received\":true}}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "OK",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": true,
+          "fallbackTo404": false,
+          "default": true,
+          "databucketID": "",
+          "bodyType": "INLINE",
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "type": "http",
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "b0000000-0000-4000-8000-000000000004",
+      "documentation": "Token para correlación (GET /uuid).",
+      "method": "get",
+      "endpoint": "uuid",
+      "responses": [
+        {
+          "uuid": "c0000000-0000-4000-8000-000000000004",
+          "body": "{\"uuid\":\"d3b07384-d9a0-4c9b-9c2e-5b0e9a7c1234\"}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "OK",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": true,
+          "fallbackTo404": false,
+          "default": true,
+          "databucketID": "",
+          "bodyType": "INLINE",
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "type": "http",
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "b0000000-0000-4000-8000-000000000005",
+      "documentation": "Eco de cabeceras (GET /headers).",
+      "method": "get",
+      "endpoint": "headers",
+      "responses": [
+        {
+          "uuid": "c0000000-0000-4000-8000-000000000005",
+          "body": "{\"ok\":true,\"headers\":{}}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "OK",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "filePath": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": true,
+          "fallbackTo404": false,
+          "default": true,
+          "databucketID": "",
+          "bodyType": "INLINE",
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "type": "http",
+      "streamingMode": null,
+      "streamingInterval": 0
+    }
+  ],
+  "proxyMode": false,
+  "proxyHost": "",
+  "cors": true,
+  "headers": [
+    {
+      "key": "Content-Type",
+      "value": "application/json"
+    }
+  ],
+  "proxyReqHeaders": [
+    {
+      "key": "",
+      "value": ""
+    }
+  ],
+  "proxyResHeaders": [
+    {
+      "key": "",
+      "value": ""
+    }
+  ],
+  "proxyRemovePrefix": false,
+  "hostname": "",
+  "tlsOptions": {
+    "enabled": false,
+    "type": "CERT",
+    "pfxPath": "",
+    "certPath": "",
+    "keyPath": "",
+    "caPath": "",
+    "passphrase": ""
+  },
+  "data": [],
+  "folders": [],
+  "rootChildren": [
+    {
+      "type": "route",
+      "uuid": "b0000000-0000-4000-8000-000000000001"
+    },
+    {
+      "type": "route",
+      "uuid": "b0000000-0000-4000-8000-000000000002"
+    },
+    {
+      "type": "route",
+      "uuid": "b0000000-0000-4000-8000-000000000003"
+    },
+    {
+      "type": "route",
+      "uuid": "b0000000-0000-4000-8000-000000000004"
+    },
+    {
+      "type": "route",
+      "uuid": "b0000000-0000-4000-8000-000000000005"
+    }
+  ],
+  "callbacks": []
+}

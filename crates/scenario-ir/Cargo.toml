@@ -1,0 +1,21 @@
+[package]
+name = "scenario-ir"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "perfkit: IR canónico de escenarios + reporte de fidelidad + validación + JSON Schema"
+
+[lib]
+name = "scenario_ir"
+path = "src/lib.rs"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml_ng.workspace = true
+rmp-serde.workspace = true
+schemars.workspace = true
+thiserror.workspace = true
+regex.workspace = true
+serde_json_path.workspace = true

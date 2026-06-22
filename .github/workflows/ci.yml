@@ -1,0 +1,131 @@
+# Integración continua de perfkit.
+#
+# Dos trabajos:
+#   - test:         formato, lint (clippy con warnings = error) y tests del workspace.
+#   - quality-gate: compila el binario release y ejecuta el flujo real de perfkit
+#                   (import -> validate -> run -> gate) contra un servidor HTTP
+#                   local mínimo, fallando el pipeline si se incumplen los umbrales.
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+# Cancela ejecuciones previas de la misma rama/PR si llega un push nuevo.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  # Backtraces legibles si algún test entra en pánico.
+  RUST_BACKTRACE: 1
+
+jobs:
+  # --------------------------------------------------------------------------
+  # Formato + lint + tests
+  # --------------------------------------------------------------------------
+  test:
+    name: test (fmt + clippy + tests)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Instalar toolchain de Rust 1.95
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.95.0"
+          components: rustfmt, clippy
+
+      - name: Cache de cargo/target
+        uses: Swatinem/rust-cache@v2
+
+      - name: Comprobar formato
+        run: cargo fmt --all -- --check
+
+      - name: Clippy (warnings = error)
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Tests del workspace
+        run: cargo test --workspace
+
+  # --------------------------------------------------------------------------
+  # Quality gate end-to-end con el binario real
+  # --------------------------------------------------------------------------
+  quality-gate:
+    name: quality-gate (import + validate + run + gate)
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Instalar toolchain de Rust 1.95
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.95.0"
+
+      - name: Cache de cargo/target
+        uses: Swatinem/rust-cache@v2
+
+      - name: Compilar perfkit (release)
+        run: cargo build --release -p cli
+
+      - name: Exponer perfkit en el PATH
+        run: echo "${GITHUB_WORKSPACE}/target/release" >> "$GITHUB_PATH"
+
+      # 1) Importar un plan JMX al IR canónico de perfkit.
+      - name: Import JMX -> IR
+        run: perfkit import jmx examples/jmx/http-get-simple.jmx -o /tmp/s.yaml
+
+      # 2) Validar el escenario (schema + reglas semánticas).
+      #    Sale con código 1 si hay errores -> el pipeline falla.
+      - name: Validar escenario
+        run: perfkit validate /tmp/s.yaml
+
+      # 3) Levantar un servidor HTTP local mínimo (incluido en el repo).
+      #    Responde 200 a cualquier ruta; lo usamos como target de la carga.
+      - name: Arrancar servidor HTTP local
+        run: |
+          python3 tools/test-server.py 8787 &
+          echo "HTTP_SERVER_PID=$!" >> "$GITHUB_ENV"
+          # Esperar a que el servidor acepte conexiones.
+          for i in $(seq 1 30); do
+            if curl -sf -o /dev/null "http://127.0.0.1:8787/"; then
+              echo "servidor listo"; exit 0
+            fi
+            sleep 1
+          done
+          echo "el servidor no respondió a tiempo" >&2
+          exit 1
+
+      # 4) Ejecutar una carga corta contra el servidor local y producir
+      #    reports/ci/summary.json (machine-readable).
+      - name: Run de carga (corto)
+        run: |
+          perfkit run /tmp/s.yaml \
+            --base-url "http://127.0.0.1:8787" \
+            --vus 5 \
+            --duration 5 \
+            --report json \
+            --out reports/ci
+
+      # 5) Quality gate: comparar el summary contra los umbrales versionados.
+      #    `perfkit gate` sale con código 1 si NO se cumplen -> el job falla.
+      - name: Quality gate contra umbrales
+        run: perfkit gate reports/ci/summary.json --thresholds examples/yaml/thresholds.yaml
+
+      # 6) Publicar el summary como artefacto para inspección posterior.
+      - name: Subir summary como artefacto
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perfkit-ci-summary
+          path: reports/ci/summary.json
+          if-no-files-found: warn
+
+      - name: Detener servidor HTTP local
+        if: always()
+        run: kill "${HTTP_SERVER_PID}" 2>/dev/null || true
